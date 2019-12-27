@@ -1,0 +1,58 @@
+service: sendgrind-test
+
+app: sendgrind-test
+org: sergiomatamoons
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  memorySize: 1024 # optional, in MB, default is 1024
+  timeout: 60 # optional, in seconds, default is 6
+  stage: ${opt:stage,'dev'}
+  stackName: sendgrid-test
+  apiGateway:
+  restApiId: ${env:API_GATEWAY_ID}
+  restApiRootResourceId: ${env:API_GATEWAY_RESOURCE_ID}
+  deploymentBucket:
+    name: ${self:provider.stage}-sendgrid-test
+    serverSideEncryption: AES256
+  enviroment:
+    SENDGRID_API_KEY: ${env:SENDGRID_API_KEY}
+    API_GATEWAY_ID: ${env:API_GATEWAY_ID}
+    API_GATEWAY_RESOURCE_ID: ${env:API_GATEWAY_RESOURCE_ID}
+
+plugins:
+  - serverless-offline
+  - serverless-dotenv-plugin
+  - serverless-deployment-bucket
+
+custom:
+  webpack:
+    packager: "npm" # Packager that will be used to package your external modules
+    includeModules:
+      packagePath: ./package.json
+
+  region: us-east-1
+  stage-default: "dev"
+
+package:
+  exclude:
+    - .gitignore
+    - .git/**
+  individually: true
+  excludeDevDependencies: true
+  region: us-east-1
+
+  dotenv:
+    include:
+      - SENDGRID_API_KEY
+      - API_GATEWAY_ID
+      - API_GATEWAY_RESOURCE_ID
+
+functions:
+  sendgridTest:
+    handler: handler.sendgridTest
+    events:
+      - http:
+          path: /sendgrind-test
+          method: post
